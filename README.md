@@ -2,6 +2,14 @@
 
 Ship iOS apps from the terminal with one App Store Connect API key. Early days: only `doctor` exists so far.
 
+## Install
+
+Needs macOS and Node 18+. Not on npm yet:
+
+```sh
+npm install -g github:6LebronJames23/ascship
+```
+
 ## doctor
 
 Checks an exported `.ipa` before you upload it. macOS only (uses `codesign`, `security`, `plutil`).
