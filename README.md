@@ -1,6 +1,6 @@
 # ascship
 
-Ship iOS apps from the terminal with one App Store Connect API key. Early days: only `doctor` exists so far; the App Store Connect commands (profile, build, listing, submit) are next.
+Ship iOS apps from the terminal with one App Store Connect API key. Early days: `init`, `status` and `doctor` work today; profile, build, listing and submit are next.
 
 ## Install
 
@@ -9,6 +9,33 @@ Needs macOS and Node 18+. Not on npm yet:
 ```sh
 npm install -g github:6LebronJames23/ascship
 ```
+
+## init
+
+```sh
+ascship init --app com.example.myapp
+```
+
+Finds your API key in `~/.appstoreconnect/private_keys` (where `altool` looks), asks for the issuer id, checks both against App Store Connect, and saves them to `~/.config/ascship/credentials.json` (mode 600, outside your repo). `ascship.yaml` only gets the app's id. Create a key under App Store Connect → Users and Access → Integrations; App Manager role is enough.
+
+Flags: `--key <AuthKey_X.p8>`, `--key-id`, `--issuer`. For CI, skip init and set `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_PRIVATE_KEY` (the .p8 contents) or `ASC_KEY_PATH`.
+
+## status
+
+```sh
+ascship status              # the app in ascship.yaml
+ascship status --app com.example.other --json
+```
+
+Live version, the version in progress, open review submissions and recent builds, and what is stuck:
+
+- A rejected submission still open (`UNRESOLVED_ISSUES`), with the exact call to cancel it and resubmit the same build after a backend-only fix.
+- A draft submission that was never submitted (it blocks creating a new one).
+- A version in progress with no build, or a newer build than the one attached or in review.
+- Export compliance blocking review; approved versions waiting for you to release them; builds that failed processing.
+- App Privacy is not exposed by the API, so for a version being prepared, status reminds you to confirm it is Published.
+
+Exit code 1 when something needs attention.
 
 ## doctor
 

@@ -6,6 +6,7 @@ import { checkExpected, checkAllowed, checkBuiltins, checkProfile, snapshot } fr
 import { checkBundleConsistency, projectVersionChecks } from './versions.js';
 import { checkListing } from './listing.js';
 import { probeVideo, checkPreview } from './preview.js';
+import { renderReport, summarize, c } from './render.js';
 
 const DISTRIBUTIONS = ['app-store', 'ad-hoc', 'development', 'enterprise'];
 
@@ -106,11 +107,7 @@ export function runDoctor({ ipa, project, config = {}, configPath = 'ascship.yam
   if (!report.sections.length) {
     throw new Error('nothing to check: pass --ipa or --preview, run inside a project, or add listing:/previews: to ascship.yaml');
   }
-  const all = report.sections.flatMap((s) => s.checks);
-  const count = (s) => all.filter((c) => c.status === s).length;
-  report.summary = { pass: count('pass'), warn: count('warn'), fail: count('fail') };
-  report.ok = report.summary.fail === 0;
-  return report;
+  return Object.assign(report, summarize(report.sections));
 }
 
 // Record a known-good build's entitlements as the expectations in ascship.yaml.
@@ -124,27 +121,7 @@ export function writeSnapshot(report, configPath) {
   return bundles.map((b) => b.target);
 }
 
-const useColor = process.stdout.isTTY && !process.env.NO_COLOR;
-const paint = (code) => (s) => (useColor ? `\x1b[${code}m${s}\x1b[0m` : s);
-const c = { green: paint(32), yellow: paint(33), red: paint(31), dim: paint(2), bold: paint(1) };
-const MARK = { pass: c.green('✓'), warn: c.yellow('!'), fail: c.red('✗') };
-
-export function render(report, { verbose = false } = {}) {
+export function render(report, opts) {
   const head = report.ipa ? ` ${c.dim('·')} ${report.ipa} ${c.dim(`(${report.distribution})`)}` : '';
-  const lines = [`${c.bold('ascship doctor')}${head}`, ''];
-  for (const s of report.sections) {
-    lines.push(`${c.bold(s.name)}${s.detail ? '  ' + c.dim(s.detail) : ''}`);
-    for (const chk of s.checks) {
-      if (chk.status === 'pass' && !verbose && chk.id === 'expected.ok') continue;
-      lines.push(`  ${MARK[chk.status]} ${chk.message}`);
-      if (chk.hint && chk.status !== 'pass') lines.push(`    ${c.dim('↳ ' + chk.hint)}`);
-    }
-    const ok = s.checks.filter((x) => x.id === 'expected.ok').length;
-    if (ok && !verbose) lines.push(`  ${MARK.pass} ${ok} expected entitlement${ok === 1 ? '' : 's'} present`);
-    lines.push('');
-  }
-  const { pass, warn, fail } = report.summary;
-  const tally = `${pass} passed, ${warn} warning${warn === 1 ? '' : 's'}, ${fail} failed`;
-  lines.push(fail ? c.red(`✗ ${tally}. Fix these before uploading.`) : c.green(`✓ ${tally}.`));
-  return lines.join('\n');
+  return renderReport(`${c.bold('ascship doctor')}${head}`, report, opts);
 }
