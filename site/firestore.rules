@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public waitlist: anyone may add an email; nobody may read, edit or delete from the client.
+    match /waitlist/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['email', 'source'])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        && (!('source' in request.resource.data)
+            || (request.resource.data.source is string && request.resource.data.source.size() <= 100));
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

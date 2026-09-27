@@ -1,0 +1,10 @@
+{
+  "firestore": { "rules": "firestore.rules" },
+  "hosting": {
+    "site": "ascship",
+    "public": "public",
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "ignore": ["firebase.json", ".firebaserc", "**/.*"]
+  }
+}

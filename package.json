@@ -1,0 +1,14 @@
+{
+  "name": "ascship",
+  "version": "0.1.0",
+  "description": "Ship iOS apps from the terminal with one App Store Connect API key.",
+  "type": "module",
+  "bin": { "ascship": "bin/ascship.js" },
+  "files": ["bin", "src"],
+  "engines": { "node": ">=18" },
+  "os": ["darwin"],
+  "scripts": { "test": "node --test" },
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": { "yaml": "^2.5.0" }
+}
