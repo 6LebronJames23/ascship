@@ -1,6 +1,6 @@
 {
   "name": "ascship",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Ship iOS apps from the terminal with one App Store Connect API key.",
   "type": "module",
   "bin": { "ascship": "bin/ascship.js" },

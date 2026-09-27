@@ -94,13 +94,16 @@ export function readProfile(bundlePath) {
   };
 }
 
-export function readBundleId(bundlePath) {
+export function readBundleInfo(bundlePath) {
   const info = join(bundlePath, 'Info.plist');
-  try {
-    return run('plutil', ['-extract', 'CFBundleIdentifier', 'raw', '-o', '-', info]).toString().trim();
-  } catch {
-    return undefined;
-  }
+  const key = (k) => {
+    try {
+      return run('plutil', ['-extract', k, 'raw', '-o', '-', info]).toString().trim();
+    } catch {
+      return undefined;
+    }
+  };
+  return { bundleId: key('CFBundleIdentifier'), version: key('CFBundleShortVersionString'), build: key('CFBundleVersion') };
 }
 
 export const targetName = (bundlePath) => basename(bundlePath, extname(bundlePath));

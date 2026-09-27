@@ -1,8 +1,11 @@
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { basename } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, statSync, readdirSync } from 'node:fs';
+import { basename, dirname, resolve, join } from 'node:path';
 import YAML from 'yaml';
-import { unzipIpa, findBundles, readEntitlements, verifySignature, readProfile, readBundleId, targetName } from './ipa.js';
+import { unzipIpa, findBundles, readEntitlements, verifySignature, readProfile, readBundleInfo, targetName } from './ipa.js';
 import { checkExpected, checkAllowed, checkBuiltins, checkProfile, snapshot } from './entitlements.js';
+import { checkBundleConsistency, projectVersionChecks } from './versions.js';
+import { checkListing } from './listing.js';
+import { probeVideo, checkPreview } from './preview.js';
 
 const DISTRIBUTIONS = ['app-store', 'ad-hoc', 'development', 'enterprise'];
 
@@ -13,10 +16,7 @@ export function loadConfig(path) {
   return { doc, data: doc.toJS() ?? {} };
 }
 
-export function doctorIpa(ipaPath, { config = {}, distribution } = {}) {
-  if (distribution && !DISTRIBUTIONS.includes(distribution)) {
-    throw new Error(`--dist must be one of ${DISTRIBUTIONS.join(', ')}`);
-  }
+function ipaSections(ipaPath, { config, distribution }) {
   const ipa = unzipIpa(ipaPath);
   try {
     const paths = findBundles(ipa.app);
@@ -26,7 +26,7 @@ export function doctorIpa(ipaPath, { config = {}, distribution } = {}) {
 
     const bundles = paths.map((path) => {
       const target = targetName(path);
-      const bundleId = readBundleId(path);
+      const { bundleId, version, build } = readBundleInfo(path);
       const actual = readEntitlements(path);
       const profile = readProfile(path);
       const sig = verifySignature(path);
@@ -48,26 +48,80 @@ export function doctorIpa(ipaPath, { config = {}, distribution } = {}) {
       }
       if (profile) checks.push(...checkAllowed(actual, profile.entitlements));
       checks.push(...checkBuiltins(actual, { distribution: dist, teamId: profile?.teamId, bundleId }));
-      return { target, bundleId, entitlements: actual, checks };
+      return { kind: 'bundle', name: target, detail: bundleId, target, bundleId, version, build, entitlements: actual, checks };
     });
-
-    const all = bundles.flatMap((b) => b.checks);
-    const count = (s) => all.filter((c) => c.status === s).length;
-    const summary = { pass: count('pass'), warn: count('warn'), fail: count('fail') };
-    return { ipa: basename(ipaPath), distribution: dist, ok: summary.fail === 0, summary, bundles };
+    return { distribution: dist, bundles };
   } finally {
     ipa.cleanup();
   }
 }
 
+function previewFiles(list, baseDir) {
+  return list.flatMap((p) => {
+    const abs = resolve(baseDir, p);
+    if (!existsSync(abs)) throw new Error(`preview not found: ${p}`);
+    return statSync(abs).isDirectory()
+      ? readdirSync(abs).filter((f) => /\.(mp4|mov|m4v)$/i.test(f)).sort().map((f) => join(abs, f))
+      : [abs];
+  });
+}
+
+export function runDoctor({ ipa, project, config = {}, configPath = 'ascship.yaml', distribution, previews } = {}) {
+  if (distribution && !DISTRIBUTIONS.includes(distribution)) {
+    throw new Error(`--dist must be one of ${DISTRIBUTIONS.join(', ')}`);
+  }
+  const report = { sections: [] };
+
+  let bundles = [];
+  if (ipa) {
+    const r = ipaSections(ipa, { config, distribution });
+    report.ipa = basename(ipa);
+    report.distribution = r.distribution;
+    bundles = r.bundles;
+    report.sections.push(...bundles);
+  }
+
+  const versionChecks = bundles.length ? checkBundleConsistency(bundles) : [];
+  const proj = projectVersionChecks(project ?? dirname(resolve(configPath)), bundles);
+  if (project && !proj) throw new Error(`no project.yml or .xcodeproj found at ${project}`);
+  if (proj) versionChecks.push(...proj.checks);
+  if (versionChecks.length) {
+    report.sections.push({ kind: 'versions', name: 'Versions', detail: proj?.source, checks: versionChecks });
+  }
+
+  report.sections.push(...checkListing(config.listing));
+
+  const previewList = previews?.length ? previews : config.previews ?? [];
+  const base = previews?.length ? process.cwd() : dirname(resolve(configPath));
+  for (const file of previewFiles(previewList, base)) {
+    let checks;
+    try {
+      checks = checkPreview(probeVideo(file));
+    } catch (e) {
+      checks = [{ status: 'fail', id: 'preview.unreadable', message: e.message }];
+    }
+    report.sections.push({ kind: 'preview', name: `Preview ${basename(file)}`, checks });
+  }
+
+  if (!report.sections.length) {
+    throw new Error('nothing to check: pass --ipa or --preview, run inside a project, or add listing:/previews: to ascship.yaml');
+  }
+  const all = report.sections.flatMap((s) => s.checks);
+  const count = (s) => all.filter((c) => c.status === s).length;
+  report.summary = { pass: count('pass'), warn: count('warn'), fail: count('fail') };
+  report.ok = report.summary.fail === 0;
+  return report;
+}
+
 // Record a known-good build's entitlements as the expectations in ascship.yaml.
 export function writeSnapshot(report, configPath) {
   const { doc } = loadConfig(configPath);
-  for (const b of report.bundles) {
+  const bundles = report.sections.filter((s) => s.kind === 'bundle');
+  for (const b of bundles) {
     doc.setIn(['entitlements', b.target, report.distribution], snapshot(b.entitlements));
   }
   writeFileSync(configPath, doc.toString());
-  return report.bundles.map((b) => b.target);
+  return bundles.map((b) => b.target);
 }
 
 const useColor = process.stdout.isTTY && !process.env.NO_COLOR;
@@ -76,20 +130,21 @@ const c = { green: paint(32), yellow: paint(33), red: paint(31), dim: paint(2), 
 const MARK = { pass: c.green('✓'), warn: c.yellow('!'), fail: c.red('✗') };
 
 export function render(report, { verbose = false } = {}) {
-  const lines = [`${c.bold('ascship doctor')} ${c.dim('·')} ${report.ipa} ${c.dim(`(${report.distribution})`)}`, ''];
-  for (const b of report.bundles) {
-    lines.push(`${c.bold(b.target)}  ${c.dim(b.bundleId ?? '')}`);
-    for (const chk of b.checks) {
+  const head = report.ipa ? ` ${c.dim('·')} ${report.ipa} ${c.dim(`(${report.distribution})`)}` : '';
+  const lines = [`${c.bold('ascship doctor')}${head}`, ''];
+  for (const s of report.sections) {
+    lines.push(`${c.bold(s.name)}${s.detail ? '  ' + c.dim(s.detail) : ''}`);
+    for (const chk of s.checks) {
       if (chk.status === 'pass' && !verbose && chk.id === 'expected.ok') continue;
       lines.push(`  ${MARK[chk.status]} ${chk.message}`);
       if (chk.hint && chk.status !== 'pass') lines.push(`    ${c.dim('↳ ' + chk.hint)}`);
     }
-    const ok = b.checks.filter((x) => x.id === 'expected.ok').length;
+    const ok = s.checks.filter((x) => x.id === 'expected.ok').length;
     if (ok && !verbose) lines.push(`  ${MARK.pass} ${ok} expected entitlement${ok === 1 ? '' : 's'} present`);
     lines.push('');
   }
   const { pass, warn, fail } = report.summary;
   const tally = `${pass} passed, ${warn} warning${warn === 1 ? '' : 's'}, ${fail} failed`;
-  lines.push(fail ? c.red(`✗ ${tally}. Do not upload this build.`) : c.green(`✓ ${tally}.`));
+  lines.push(fail ? c.red(`✗ ${tally}. Fix these before uploading.`) : c.green(`✓ ${tally}.`));
   return lines.join('\n');
 }
