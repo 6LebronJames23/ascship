@@ -100,7 +100,11 @@ export function client(creds = loadCredentials(), { fetchImpl = fetch } = {}) {
     if (!res.ok) throw new AscError(res.status, json, path);
     return json;
   };
-  return { get: (path) => request('GET', path) };
+  return {
+    get: (path) => request('GET', path),
+    post: (path, body) => request('POST', path, body),
+    patch: (path, body) => request('PATCH', path, body),
+  };
 }
 
 // Resolve `included` relationships in a JSON:API response into plain objects.

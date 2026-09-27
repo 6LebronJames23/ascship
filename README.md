@@ -1,6 +1,6 @@
 # ascship
 
-Ship iOS apps from the terminal with one App Store Connect API key. Early days: `init`, `status` and `doctor` work today; profile, build, listing and submit are next.
+Ship iOS apps from the terminal with one App Store Connect API key. From signing to submission: `init`, `profile`, `build`, `listing`, `submit`, plus `status` and `doctor`.
 
 ## Install
 
@@ -19,6 +19,59 @@ ascship init --app com.example.myapp
 Finds your API key in `~/.appstoreconnect/private_keys` (where `altool` looks), asks for the issuer id, checks both against App Store Connect, and saves them to `~/.config/ascship/credentials.json` (mode 600, outside your repo). `ascship.yaml` only gets the app's id. Create a key under App Store Connect → Users and Access → Integrations; App Manager role is enough.
 
 Flags: `--key <AuthKey_X.p8>`, `--key-id`, `--issuer`. For CI, skip init and set `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_PRIVATE_KEY` (the .p8 contents) or `ASC_KEY_PATH`.
+
+## The release flow
+
+```sh
+ascship init --app com.example.myapp      # once
+ascship profile                            # once, and when certificates change
+ascship listing pull                       # listing text into ascship.yaml
+ascship build --upload                     # archive, export, doctor, upload
+ascship listing push                       # after editing ascship.yaml
+ascship submit --app-version 1.4           # create the version, attach the build, submit
+ascship status                             # until it is live
+```
+
+Every command that changes App Store Connect supports `--dry-run`, and `listing push` / `submit` ask before they act (`--yes` to skip, required without a terminal).
+
+## profile
+
+```sh
+ascship profile                  # app-store profiles for every target in project.yml
+ascship profile --type development --bundle-id com.example.myapp
+```
+
+Makes sure every bundle (app, extensions, watch app) has an active profile signed by a certificate **whose private key is in this Mac's keychain** (matched by serial, not just "the first distribution certificate"). Reuses a valid profile, otherwise registers the bundle id if needed and creates a new, uniquely named profile. Installs them and records the mapping in `ascship.yaml`. **It never deletes profiles**, so it can't break another app that shares a name. Works without an Apple ID signed in to Xcode.
+
+## build
+
+```sh
+ascship build --dry-run          # print the xcodebuild commands and ExportOptions.plist
+ascship build                    # archive + export + doctor
+ascship build --upload           # ...and upload if doctor passes
+```
+
+Refuses to archive when `project.yml` is ahead of the generated project (`--regenerate` runs xcodegen first). Exports with manual signing using the profiles from `ascship profile`, with `manageAppVersionAndBuildNumber` off so Xcode can't renumber your build. Runs `doctor` on the exported IPA and uploads only a clean build, with `altool` and your API key. Logs go to `build/ascship/logs/`.
+
+## listing
+
+```sh
+ascship listing pull             # live / in-progress listing → ascship.yaml
+ascship listing push --dry-run   # show the diff
+ascship listing push             # check, confirm, update only what changed
+```
+
+Name, subtitle and privacy URL go to the app info; description, keywords, promotional text, What's New and support/marketing URLs go to the version in progress. Runs the doctor listing checks first and refuses to push text App Store Connect would reject. Skips What's New on a first release (not allowed) and creates localizations that don't exist yet.
+
+## submit
+
+```sh
+ascship submit --dry-run
+ascship submit --app-version 1.4 --release manual
+ascship submit --cancel          # withdraw a submission
+```
+
+Creates the version if needed, attaches the newest processed build for that version, and checks what App Review will see: description, What's New on updates, screenshots in every localization, and no emoji. Export compliance must be answered explicitly (`--no-encryption` for apps that only use standard HTTPS). Reuses an unsubmitted draft submission rather than hitting the one-draft limit, and refuses while another submission is in review or rejected (use `--cancel`).
 
 ## status
 

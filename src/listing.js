@@ -5,6 +5,7 @@ const check = (status, id, message, extra = {}) => ({ status, id, message, ...ex
 
 // App Store Connect field limits (characters).
 export const LIMITS = { name: 30, subtitle: 30, keywords: 100, promotionalText: 170, description: 4000, whatsNew: 4000 };
+export const URL_FIELDS = new Set(['privacyPolicyUrl', 'supportUrl', 'marketingUrl']);
 
 // Fields where emoji have been rejected outright by the API; elsewhere they are a warning.
 const EMOJI_REJECTED = new Set(['description', 'whatsNew']);
@@ -18,8 +19,14 @@ const words = (s) => (s ?? '').toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
 export function checkLocale(locale, fields) {
   const out = [];
   for (const [field, value] of Object.entries(fields ?? {})) {
+    if (URL_FIELDS.has(field)) {
+      let ok = false;
+      try { ok = new URL(value).protocol === 'https:'; } catch {}
+      if (!ok) out.push(check('fail', 'listing.url', `${locale}.${field} is not an https URL: ${value}`, { field }));
+      continue;
+    }
     if (!(field in LIMITS)) {
-      out.push(check('warn', 'listing.unknown-field', `${locale}.${field} is not a listing field ascship knows (${Object.keys(LIMITS).join(', ')})`));
+      out.push(check('warn', 'listing.unknown-field', `${locale}.${field} is not a listing field ascship knows (${[...Object.keys(LIMITS), ...URL_FIELDS].join(', ')})`));
       continue;
     }
     if (typeof value !== 'string') continue;
@@ -63,7 +70,7 @@ export function checkListing(listing) {
   const sections = [];
   for (const [locale, fields] of Object.entries(listing ?? {})) {
     const checks = checkLocale(locale, fields);
-    const present = Object.keys(fields ?? {}).filter((f) => f in LIMITS);
+    const present = Object.keys(fields ?? {}).filter((f) => f in LIMITS || URL_FIELDS.has(f));
     if (!checks.some((c) => c.status === 'fail')) {
       checks.unshift(check('pass', 'listing.ok', `${present.length} field${present.length === 1 ? '' : 's'} within limits${checks.length ? '' : ', no emoji'}`));
     }

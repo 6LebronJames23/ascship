@@ -93,7 +93,7 @@ export function checkBundleConsistency(bundles) {
       }));
     }
   }
-  if (!out.length) out.push(check('pass', 'version.consistent', `all ${bundles.length} bundle${bundles.length === 1 ? '' : 's'} are ${fmt(main)}`));
+  if (!out.length) out.push(check('pass', 'version.consistent', bundles.length === 1 ? `bundle is ${fmt(main)}` : `all ${bundles.length} bundles are ${fmt(main)}`));
   return out;
 }
 
