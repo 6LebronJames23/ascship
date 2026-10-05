@@ -36,6 +36,9 @@
   .logo span { color: var(--accent); }
   nav a.cta-sm { font-size: 14px; text-decoration: none; border: 1px solid var(--line); padding: 7px 14px; border-radius: 8px; color: var(--text); }
   nav a.cta-sm:hover { border-color: var(--accent); }
+  .nav-r { display: flex; align-items: center; gap: 16px; }
+  nav a.nav-link { font-size: 14px; color: var(--muted); text-decoration: none; }
+  nav a.nav-link:hover { color: var(--accent); }
 
   .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; padding: 56px 0 72px; }
   .eyebrow { font-family: var(--mono); font-size: 13px; color: var(--accent); margin-bottom: 16px; }
@@ -110,6 +113,7 @@
     .wrap { padding: 0 16px; }
     form.wl { flex-direction: column; }
     form.wl button { padding: 13px; }
+    nav a.nav-link { display: none; }
   }
 </style>
 </head>
@@ -117,7 +121,7 @@
 <div class="wrap">
   <nav>
     <div class="logo">asc<span>ship</span></div>
-    <a class="cta-sm" href="#join">Join the waitlist</a>
+    <div class="nav-r"><a class="nav-link" href="/done-for-you">Rather have it done for you?</a><a class="cta-sm" href="#join">Join the waitlist</a></div>
   </nav>
 
   <header class="hero">
@@ -248,7 +252,7 @@
 </section>
 
 <footer>
-  <div class="wrap">ascship is an independent tool and is not affiliated with Apple. App Store and App Store Connect are trademarks of Apple Inc.</div>
+  <div class="wrap">ascship is an independent tool and is not affiliated with Apple. App Store and App Store Connect are trademarks of Apple Inc. · <a href="/done-for-you" style="color:inherit">Done-for-you App Store submission</a></div>
 </footer>
 
 <script>
