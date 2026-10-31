@@ -6,3 +6,4 @@ site/.firebase/
 # local-only notes
 marketing/
 BACKLOG.md
+decoder/.firebaserc

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App Store Guideline 4.8 Rejection: How to Fix It (Login Services (Sign in with Apple))</title>
+<meta name="description" content="Your app offers Google, Facebook or another third-party login but no equivalent privacy-friendly option like Sign in with Apple. Plain-English explanation, common causes, step-by-step fix and a reply template for App Review.">
+<meta property="og:title" content="App Store Guideline 4.8 Rejection: How to Fix It (Login Services (Sign in with Apple))">
+<meta property="og:description" content="Your app offers Google, Facebook or another third-party login but no equivalent privacy-friendly option like Sign in with Apple. Plain-English explanation, common causes, step-by-step fix and a reply template for App Review.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ascship.web.app/guideline/4-8-login-services">
+<link rel="canonical" href="https://ascship.web.app/guideline/4-8-login-services">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0b0d10; --panel:#12151a; --panel-2:#171b21; --line:#232830; --text:#e6e9ee; --muted:#8b93a0; --accent:#5eead4; --accent-ink:#062521; --warn:#fbbf24; --good:#4ade80;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace; --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { -webkit-text-size-adjust:100%; }
+  body { background:var(--bg); color:var(--text); font-family:var(--sans); line-height:1.6; }
+  a { color:var(--accent); }
+  .wrap { max-width:780px; margin:0 auto; padding:0 16px; }
+  nav { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:22px 0; flex-wrap:wrap; }
+  .logo { font-family:var(--mono); font-weight:700; font-size:18px; color:var(--text); text-decoration:none; }
+  .logo span { color:var(--accent); }
+  nav .links { display:flex; gap:16px; font-size:14px; }
+  nav .links a { color:var(--muted); text-decoration:none; }
+  nav .links a:hover { color:var(--text); }
+  .eyebrow { font-family:var(--mono); font-size:13px; color:var(--accent); margin:28px 0 12px; }
+  h1 { font-size:clamp(30px,5vw,44px); line-height:1.1; letter-spacing:-.03em; }
+  h2 { font-size:22px; letter-spacing:-.02em; margin:40px 0 12px; }
+  p.lead { color:var(--muted); font-size:18px; margin:16px 0 0; }
+  p { margin:0 0 12px; }
+  ul, ol { padding-left:22px; margin:0 0 12px; }
+  li { margin:6px 0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; margin:16px 0; }
+  .reply { font-family:var(--mono); font-size:13.5px; white-space:pre-wrap; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:16px; overflow-wrap:anywhere; }
+  .btn { display:inline-block; background:var(--accent); color:var(--accent-ink); border:0; border-radius:10px; padding:12px 18px; font:inherit; font-weight:600; font-size:15px; cursor:pointer; text-decoration:none; }
+  .btn.ghost { background:transparent; color:var(--text); border:1px solid var(--line); }
+  .btn:disabled { opacity:.6; cursor:default; }
+  .cta { background:linear-gradient(135deg,#10302c,#12151a 60%); border:1px solid #1f4d47; border-radius:16px; padding:24px; margin:40px 0; }
+  .cta h3 { font-size:20px; margin-bottom:6px; }
+  .cta p { color:var(--muted); }
+  .cta .btns { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  .pill { display:inline-block; font-family:var(--mono); font-size:12px; border:1px solid var(--line); border-radius:999px; padding:3px 10px; color:var(--muted); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin:16px 0; }
+  .grid a { display:block; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; text-decoration:none; color:var(--text); }
+  .grid a:hover { border-color:var(--accent); }
+  .grid b { font-family:var(--mono); color:var(--accent); display:block; font-size:14px; }
+  .grid span { font-size:14px; color:var(--muted); }
+  footer { color:var(--muted); font-size:13px; padding:40px 0 60px; border-top:1px solid var(--line); margin-top:56px; }
+  textarea { width:100%; min-height:200px; resize:vertical; background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:14px; font:14px/1.5 var(--mono); }
+  textarea:focus { outline:none; border-color:var(--accent); }
+  .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:12px; }
+  .muted { color:var(--muted); font-size:14px; }
+  .err { color:#f87171; }
+  .tag { font-family:var(--mono); font-size:12px; padding:3px 9px; border-radius:999px; border:1px solid var(--line); }
+  .tag.quick { color:var(--good); border-color:#1e4d33; } .tag.moderate { color:var(--warn); border-color:#4d3f1e; } .tag.involved { color:#f87171; border-color:#4d1e1e; }
+  @media (max-width:520px) { nav .links { width:100%; } .cta .btns .btn { width:100%; text-align:center; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <a class="logo" href="/">asc<span>ship</span></a>
+  <div class="links"><a href="/rejection-decoder">Rejection decoder</a><a href="/guidelines">Common rejections</a><a href="https://www.fiverr.com/yeetermemes/fix-your-app-store-rejection-and-get-your-ios-app-approved" rel="noopener">Hire me</a></div>
+</nav>
+
+<div class="eyebrow">App Store Guideline 4.8</div>
+<h1>Guideline 4.8 rejection (Login Services (Sign in with Apple)): what it means and how to fix it</h1>
+<p class="lead">Your app offers Google, Facebook or another third-party login but no equivalent privacy-friendly option like Sign in with Apple.</p>
+
+<h2>What Apple is saying</h2>
+<p>If your app uses a third-party or social login (Google, Facebook, X and so on) as its main way to sign in, it must also offer another login option that limits data collection to name and email, lets users keep their email private, and doesn&#39;t track them for ads. Sign in with Apple meets all of that, so it&#39;s the usual fix.</p>
+
+<h2>Common causes</h2>
+<ul><li>Google or Facebook sign-in is offered and Sign in with Apple isn&#39;t.</li><li>Sign in with Apple is offered but hidden or less prominent than other options.</li><li>Sign in with Apple is in the app but the capability or backend setup is broken, so it fails during review.</li></ul>
+
+<h2>How to fix it</h2>
+<ol><li>Enable the Sign in with Apple capability for your app ID and add the entitlement.</li><li>Add the Sign in with Apple button alongside the other login buttons, at a similar size and position.</li><li>Enable Apple as a provider in your auth backend (Firebase, Supabase, Auth0 and so on) using your app&#39;s bundle ID.</li><li>Test sign-in on a real device, then upload a new build.</li></ol>
+
+<h2>Do you need a new build?</h2>
+<p>Yes.</p>
+
+<h2>Reply to App Review</h2>
+<p class="muted">Send this in Resolution Center (App Store Connect → your app → the rejected version) after fixing. Fill in the [brackets].</p>
+<div class="reply">Hello,
+
+Thank you for the review. We&#39;ve added Sign in with Apple as a login option alongside [Google], at equal prominence. It&#39;s available on the sign-in screen in build [number].</div>
+
+
+<div class="cta">
+  <h3>Got a 4.8 rejection you&#39;d rather not deal with?</h3>
+  <p>I've shipped 7 apps of my own and fixed real rejections on them. Invite me to App Store Connect (no Apple ID password needed), and I'll fix it, reply to Apple and resubmit. From $45, with unlimited revisions until the original rejection is approved.</p>
+  <div class="btns"><a class="btn" href="https://www.fiverr.com/yeetermemes/fix-your-app-store-rejection-and-get-your-ios-app-approved" rel="noopener">Get it fixed on Fiverr</a><a class="btn ghost" href="/rejection-decoder">Decode your rejection free</a></div>
+</div>
+
+<h2>Other common rejections</h2>
+<div class="grid"><a href="/guideline/2-1-app-completeness"><b>2.1</b><span>App Completeness</span></a><a href="/guideline/2-3-accurate-metadata"><b>2.3</b><span>Accurate Metadata</span></a><a href="/guideline/4-2-minimum-functionality"><b>4.2</b><span>Minimum Functionality</span></a><a href="/guideline/4-3-spam"><b>4.3</b><span>Spam</span></a><a href="/guideline/5-1-1-data-collection"><b>5.1.1</b><span>Data Collection and Storage</span></a><a href="/guideline/5-1-1-v-account-deletion"><b>5.1.1(v)</b><span>Account Sign-In and Deletion</span></a><a href="/guideline/3-1-1-in-app-purchase"><b>3.1.1</b><span>In-App Purchase</span></a><a href="/guideline/3-1-2-subscriptions"><b>3.1.2</b><span>Subscriptions</span></a><a href="/guideline/1-5-developer-information"><b>1.5</b><span>Developer Information</span></a></div>
+<footer>Not affiliated with Apple. Guideline summaries are plain-English paraphrases; always check Apple's current App Review Guidelines. &nbsp;·&nbsp; <a href="/">ascship</a></footer>
+</div>
+
+</body>
+</html>

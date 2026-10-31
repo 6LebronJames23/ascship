@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ascship.web.app/sitemap.xml
